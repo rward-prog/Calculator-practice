@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#dfe5ec">
+<title>TI-84 Plus Simulator | Mr. Ward's Tools</title>
+<style>
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:#dfe5ec;font-family:"Helvetica Neue",Arial,sans-serif;color:#1b2430;display:flex;flex-direction:column;overflow:hidden;-webkit-user-select:none;user-select:none}
+#main{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;gap:28px;padding:0 8px}
+.demo{flex:none;width:320px;max-height:calc(100vh - 70px);overflow:auto;background:#fff;border-radius:16px;padding:16px 16px 14px;box-shadow:0 14px 40px rgba(20,35,60,.2);color:#1b2430}
+.demo[hidden]{display:none}
+.demo.float{position:fixed;right:8px;bottom:56px;z-index:15;width:min(320px,92vw)}
+.demo h2{margin:0 0 10px;font:700 16px Arial,sans-serif}
+.dbtn{display:block;width:100%;text-align:left;border:1px solid #cfd8e3;background:#f7f9fb;border-radius:10px;padding:9px 11px;margin-bottom:6px;font:700 14px/1.25 Arial,sans-serif;color:#1b2430;cursor:pointer}
+.dbtn small{display:block;font-weight:400;color:#5d6975;margin-top:2px;font-size:12px}
+.dbtn:hover{background:#fff}
+.dbtn.on{background:#17395c;border-color:#17395c;color:#fff}
+.dbtn.on small{color:#c3d3e6}
+.dcard{margin-top:12px;padding-top:12px;border-top:1px solid #e1e7ee}
+.dcard[hidden]{display:none}
+.dstep{font:700 12px Arial,sans-serif;color:#5d6975;margin-bottom:6px}
+.dsay{font:500 19px/1.4 Arial,sans-serif;min-height:112px}
+.dsay b{background:#eaf1f8;border-radius:5px;padding:0 5px;font-weight:700;white-space:nowrap}
+.dnav{display:flex;gap:8px;margin-top:10px}
+.dnav .btn{flex:1;padding:9px 6px}
+.btn.primary{background:#17395c;color:#fff;border-color:#17395c;font-size:15px}
+.btn.primary:hover{background:#1f4b78}
+.btn:disabled{opacity:.4;cursor:default}
+.dhint{margin:2px 0 0;font:13px/1.4 Arial,sans-serif;color:#5d6975}
+#holder{position:relative}
+
+/* ---------- calculator body ---------- */
+.calc{position:absolute;left:0;top:0;width:360px;transform-origin:0 0;padding:16px 20px 30px;border-radius:34px 34px 54px 54px;
+  background:linear-gradient(180deg,#2d3239 0%,#1e2227 35%,#15171b 100%);
+  box-shadow:inset 0 2px 0 #50575f,inset 0 0 0 1px #0d0f12,0 0 0 2px #0b0d10,0 30px 50px rgba(20,32,52,.35)}
+.top{display:flex;justify-content:flex-end;align-items:baseline;margin:0 4px 8px}
+.model{color:#eef1f5;font:700 17px/1 Arial,sans-serif;letter-spacing:.2px}
+.model i{font-style:normal;font-weight:400;color:#c9d0d9}
+.bezel{background:#0d1013;padding:12px 12px 14px;border-radius:14px 14px 22px 22px;box-shadow:inset 0 2px 6px #000,0 1px 0 #444b53}
+#lcd{display:block;width:100%;height:auto;border-radius:4px;box-shadow:0 0 0 2px #050607}
+
+/* ---------- keystroke trail ---------- */
+.trailwrap{position:relative;margin:12px 0 12px}
+.trail{height:68px;padding:6px;background:#0b0e11;border-radius:10px;box-shadow:inset 0 2px 5px #000,0 1px 0 #3b4249;
+  display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;overflow:hidden}
+.trail:empty::before{content:"Keys you press will show up here";color:#8b95a1;font:500 13px/54px Arial,sans-serif;padding-left:4px}
+.chip{height:27px;min-width:27px;padding:0 8px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;
+  font:700 15px/1 Arial,sans-serif;background:#eceef1;color:#101317}
+.chip.s{background:#0e2a45;color:#79c3ff;box-shadow:inset 0 0 0 1.5px #3d8fd6}
+.chip.a{background:#112e16;color:#92e67f;box-shadow:inset 0 0 0 1.5px #4aa83a}
+.chip.m2{background:#5aa2e0;color:#05192d}
+.chip.ma{background:#6cbc5b;color:#09230a}
+.chip.e{background:#7b828c;color:#fff}
+.chip.sep{min-width:0;width:3px;padding:0;background:#47505b;border-radius:2px}
+.toast{position:absolute;right:6px;bottom:6px;max-width:80%;padding:5px 9px;border-radius:7px;background:#ffd24a;color:#2a1f00;font:700 12px/1.2 Arial,sans-serif;opacity:0;transition:opacity .15s;pointer-events:none}
+.toast.on{opacity:1}
+.calc.notrail .trailwrap{display:none}
+
+/* ---------- keys ---------- */
+.keys{display:grid;grid-template-columns:repeat(5,1fr);column-gap:7px;row-gap:5px}
+.cell{display:flex;flex-direction:column}
+.lbl{height:13px;display:flex;justify-content:space-between;font:700 8.8px/13px Arial,sans-serif;padding:0 1px;white-space:nowrap}
+.lbl.tight{font-size:6.9px;letter-spacing:-.1px;gap:3px}
+.lbl .s{color:#66b6ff}.lbl .a{color:#8ade76}
+.lbl sup,.key sup{font-size:.72em;line-height:0;vertical-align:.45em}
+.key{height:30px;border:0;padding:0;border-radius:9px;font:700 12.5px/1 Arial,sans-serif;color:#fff;cursor:pointer;position:relative;
+  background:linear-gradient(#50565e,#383d44);
+  box-shadow:0 3px 0 #0b0d10,0 5px 7px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.2);transition:transform .06s,box-shadow .1s,filter .1s}
+.key:active{transform:translateY(2px)}
+.key.num{background:linear-gradient(#fbfcfd,#dcdfe4);color:#101317;font-size:17px}
+.key.op{background:linear-gradient(#848b95,#5f656e);font-size:17px}
+.key.op[data-key=enter]{font-size:12.5px}
+.key.k2nd{background:linear-gradient(#93cbf4,#5aa2e0);color:#05202f}
+.key.kalpha{background:linear-gradient(#a8e097,#6cbc5b);color:#09230a}
+.key.fn{height:22px;border-radius:11px/9px;font-size:11px;background:linear-gradient(#484e56,#30353b)}
+.key.lit,.ar.lit{box-shadow:0 0 0 3px #ffcf3f,0 0 20px 7px rgba(255,190,30,.92),0 1px 0 #000;filter:brightness(1.28);transform:translateY(2px) scale(1.05);z-index:3}
+.key.armed-s{box-shadow:0 0 0 3px #fff,0 0 16px 5px rgba(120,195,255,.95),0 3px 0 #0b0d10}
+.key.armed-a{box-shadow:0 0 0 3px #fff,0 0 16px 5px rgba(130,235,110,.95),0 3px 0 #0b0d10}
+
+.dpad{grid-column:4/6;grid-row:2/4;position:relative;width:96px;height:96px;margin:4px auto 0;border-radius:50%;
+  background:radial-gradient(circle at 50% 32%,#6c737c,#3b4047 72%);
+  box-shadow:0 4px 0 #0b0d10,0 6px 10px rgba(0,0,0,.5),inset 0 2px 0 rgba(255,255,255,.2)}
+.dpad .hub{position:absolute;inset:31px;border-radius:50%;background:#24282d;box-shadow:inset 0 2px 5px #000}
+.ar{position:absolute;border:0;padding:0;background:transparent;color:#fff;font-size:14px;line-height:1;cursor:pointer;border-radius:10px;transition:transform .06s}
+.ar.up{left:26px;top:2px;width:44px;height:30px}
+.ar.down{left:26px;bottom:2px;width:44px;height:30px}
+.ar.left{left:2px;top:26px;width:30px;height:44px}
+.ar.right{right:2px;top:26px;width:30px;height:44px}
+.ar.lit{background:rgba(255,205,70,.6)}
+
+.foot{margin-top:16px;text-align:center;color:#6c7681;font:500 10px/1 Arial,sans-serif}
+
+/* ---------- toolbar ---------- */
+.bar{flex:none;min-height:46px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;padding:6px 10px 8px;font-size:13px}
+.bar[hidden]{display:none}
+.btn{border:1px solid #b2bdca;background:#f7f9fb;border-radius:8px;padding:7px 12px;font:600 13px Arial,sans-serif;color:#1b2430;cursor:pointer}
+.btn:hover{background:#fff}
+.btn[aria-pressed=true]{background:#17395c;border-color:#17395c;color:#fff}
+.hint{color:#5d6975}
+#help{position:fixed;left:50%;bottom:58px;transform:translateX(-50%);width:min(560px,94vw);max-height:70vh;overflow:auto;background:#fff;border-radius:14px;
+  box-shadow:0 18px 50px rgba(15,30,50,.35);padding:18px 22px;font:14px/1.5 Arial,sans-serif;-webkit-user-select:text;user-select:text;z-index:20}
+#help[hidden]{display:none}
+#help h2{margin:0 0 8px;font-size:16px}
+#help dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 14px}
+#help dt{font-weight:700;color:#17395c;white-space:nowrap}
+#help dd{margin:0}
+#help p{margin:12px 0 0;color:#3b4652}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<div id="main">
+  <div id="holder">
+    <div class="calc" id="calc">
+      <div class="top"><span class="model">TI-84 <i>Plus</i></span></div>
+      <div class="bezel"><canvas id="lcd" width="768" height="512" role="img" aria-label="Calculator screen"></canvas></div>
+      <div class="trailwrap" id="trailwrap"><div class="trail" id="trail"></div><div class="toast" id="toast"></div></div>
+      <div class="keys" id="keys"></div>
+      <div class="foot">Teaching simulator. Not affiliated with Texas Instruments.</div>
+      <div class="sr" id="sr" aria-live="polite"></div>
+    </div>
+  </div>
+  <aside class="demo" id="demo" aria-label="Demos">
+    <h2>Demos</h2>
+    <div id="dlist"></div>
+    <p class="dhint" id="dhint">Pick a demo. Then press Next (or the space bar) and the calculator types it for you.</p>
+    <div class="dcard" id="dcard" hidden>
+      <div class="dstep" id="dstep"></div>
+      <div class="dsay" id="dsay"></div>
+      <div class="dnav"><button class="btn" id="dBack">&#9664; Back</button><button class="btn primary" id="dNext">Next &#9654;</button></div>
+      <div class="dnav"><button class="btn" id="dAuto" aria-pressed="false">Auto-play</button><button class="btn" id="dRestart">Restart</button><button class="btn" id="dDone">Done</button></div>
+    </div>
+  </aside>
+</div>
+
+<div class="bar" id="bar">
+  <button class="btn" id="bDemo" aria-pressed="true">Demos</button>
+  <button class="btn" id="bTrail" aria-pressed="true">Show keystrokes</button>
+  <button class="btn" id="bClearTrail">Clear keystrokes</button>
+  <button class="btn" id="bReset">Reset calculator</button>
+  <button class="btn" id="bHelp">Keyboard help</button>
+  <span class="hint">Click the keys, or type on your keyboard.</span>
+</div>
+
+<div id="help" hidden>
+  <h2>Keyboard shortcuts</h2>
+  <dl>
+    <dt>0-9 . + - * /</dt><dd>Number and operator keys</dd>
+    <dt>( ) ^ ,</dt><dd>Those keys</dd>
+    <dt>_ (underscore)</dt><dd>(-) negative sign</dd>
+    <dt>Enter or =</dt><dd>ENTER</dd>
+    <dt>Backspace / Delete</dt><dd>DEL</dd>
+    <dt>Esc</dt><dd>CLEAR</dd>
+    <dt>Arrow keys</dt><dd>Move the cursor. Up and down recall earlier entries.</dd>
+    <dt>Space bar</dt><dd>Next step of a demo</dd>
+    <dt>q</dt><dd>2nd</dd>
+    <dt>s  c  t</dt><dd>SIN, COS, TAN</dd>
+    <dt>l  n</dt><dd>LOG, LN</dd>
+    <dt>p  r  e  a</dt><dd>2nd + π, √, EE, ANS</dd>
+    <dt>k  m</dt><dd>STO▸, MODE</dd>
+  </dl>
+  <p>Like the real calculator: typing on top of a character replaces it (press 2nd DEL to insert instead), DEL at the very end of a line does nothing, and 2nd ▲ / 2nd ▼ change the screen contrast. Press MODE to switch between Radian and Degree, or Normal, Sci and Eng.</p>
+  <p>For ALPHA letters (like the A in 5 STO▸ A), use the on-screen ALPHA key.</p>
+</div>
+
+<script>
+(function(){
+'use strict';
+const $ = id => document.getElementById(id);
+
+/* =====================================================================
+   5x7 LCD FONT  ('#' = pixel on). Missing rows are padded to 8.
+   ===================================================================== */
+const FONT = {
+'0':'.###./#...#/#..##/#.#.#/##..#/#...#/.###.','1':'..#../.##../..#../..#../..#../..#../.###.',
+'2':'.###./#...#/....#/...#./..#../.#.../#####','3':'.###./#...#/....#/..##./....#/#...#/.###.',
+'4':'...#./..##./.#.#./#..#./#####/...#./...#.','5':'#####/#..../####./....#/....#/#...#/.###.',
+'6':'..##./.#.../#..../####./#...#/#...#/.###.','7':'#####/....#/...#./..#../.#.../.#.../.#...',
+'8':'.###./#...#/#...#/.###./#...#/#...#/.###.','9':'.###./#...#/#...#/.####/....#/...#./.##..',
+'A':'.###./#...#/#...#/#####/#...#/#...#/#...#','B':'####./#...#/#...#/####./#...#/#...#/####.',
+'C':'.###./#...#/#..../#..../#..../#...#/.###.','D':'####./#...#/#...#/#...#/#...#/#...#/####.',
+'E':'#####/#..../#..../####./#..../#..../#####','F':'#####/#..../#..../####./#..../#..../#....',
+'G':'.###./#...#/#..../#.###/#...#/#...#/.###.','H':'#...#/#...#/#...#/#####/#...#/#...#/#...#',
+'I':'.###./..#../..#../..#../..#../..#../.###.','J':'..###/...#./...#./...#./...#./#..#./.##..',
+'K':'#...#/#..#./#.#../##.../#.#../#..#./#...#','L':'#..../#..../#..../#..../#..../#..../#####',
+'M':'#...#/##.##/#.#.#/#.#.#/#...#/#...#/#...#','N':'#...#/##..#/#.#.#/#..##/#...#/#...#/#...#',
+'O':'.###./#...#/#...#/#...#/#...#/#...#/.###.','P':'####./#...#/#...#/####./#..../#..../#....',
+'Q':'.###./#...#/#...#/#...#/#.#.#/#..#./.##.#','R':'####./#...#/#...#/####./#.#../#..#./#...#',
+'S':'.####/#..../#..../.###./....#/....#/####.','T':'#####/..#../..#../..#../..#../..#../..#..',
+'U':'#...#/#...#/#...#/#...#/#...#/#...#/.###.','V':'#...#/#...#/#...#/#...#/#...#/.#.#./..#..',
+'W':'#...#/#...#/#...#/#.#.#/#.#.#/##.##/#...#','X':'#...#/#...#/.#.#./..#../.#.#./#...#/#...#',
+'Y':'#...#/#...#/.#.#./..#../..#../..#../..#..','Z':'#####/....#/...#./..#../.#.../#..../#####',
+'a':'...../...../.###./....#/.####/#...#/.####','b':'#..../#..../####./#...#/#...#/#...#/####.',
+'c':'...../...../.###./#..../#..../#...#/.###.','d':'....#/....#/.####/#...#/#...#/#...#/.####',
+'e':'...../...../.###./#...#/#####/#..../.###.','f':'..##./.#..#/.#.../###../.#.../.#.../.#...',
+'g':'...../...../.####/#...#/#...#/.####/....#/.###.','h':'#..../#..../#.##./##..#/#...#/#...#/#...#',
+'i':'..#../...../.##../..#../..#../..#../.###.','j':'...#./...../..##./...#./...#./...#./#..#./.##..',
+'k':'#..../#..../#..#./#.#../##.../#.#../#..#.','l':'.##../..#../..#../..#../..#../..#../.###.',
+'m':'...../...../##.#./#.#.#/#.#.#/#...#/#...#','n':'...../...../#.##./##..#/#...#/#...#/#...#',
+'o':'...../...../.###./#...#/#...#/#...#/.###.','p':'...../...../####./#...#/#...#/####./#..../#....',
+'q':'...../...../.####/#...#/#...#/.####/....#/....#','r':'...../...../#.##./##..#/#..../#..../#....',
+'s':'...../...../.####/#..../.###./....#/####.','t':'.#.../.#.../###../.#.../.#.../.#..#/..##.',
+'u':'...../...../#...#/#...#/#...#/#..##/.##.#','v':'...../...../#...#/#...#/#...#/.#.#./..#..',
+'w':'...../...../#...#/#...#/#.#.#/#.#.#/.#.#.','x':'...../...../#...#/.#.#./..#../.#.#./#...#',
+'y':'...../...../#...#/#...#/#...#/.####/....#/.###.','z':'...../...../#####/...#./..#../.#.../#####',
+'+':'...../..#../..#../#####/..#../..#../.....','-':'...../...../...../#####/...../...../.....',
+'\u00AF':'...../...../...../.###./...../...../.....',
+'\u00D7':'...../#...#/.#.#./..#../.#.#./#...#/.....','\u00F7':'...../..#../...../#####/...../..#../.....',
+'(':'...#./..#../.#.../.#.../.#.../..#../...#.',')':'.#.../..#../...#./...#./...#./..#../.#...',
+'.':'...../...../...../...../...../.##../.##..',',':'...../...../...../...../..##./...#./..#..',
+'^':'..#../.#.#./#...#/...../...../...../.....','\u2192':'...../..#../...#./#####/...#./..#../.....',
+'\u221A':'...##/...#./...#./#..#./.#.#./..#../.....',
+'\u00B2':'.##../#..#./..#../.#.../####./...../.....','\u00B9':'..#../.##../..#../..#../.###./...../.....',
+'\u207B':'...../.###./...../...../...../...../.....','\u1D07':'###../#..../##.../#..../###../...../.....',
+'\u03C0':'...../#####/.#.#./.#.#./.#.#./.#.##/.....','\u03B8':'.###./#...#/#...#/#####/#...#/#...#/.###.',
+'=':'...../...../#####/...../#####/...../.....',':':'...../.##../.##../...../.##../.##../.....',
+'?':'.###./#...#/....#/...#./..#../...../..#..','\u2191':'..#../.###./#.#.#/..#../..#../..#../..#..',
+'/':'....#/....#/...#./..#../.#.../#..../#....',' ':''
+};
+const GL = {};
+for (const ch in FONT) {
+  const r = FONT[ch] ? FONT[ch].split('/') : [];
+  while (r.length < 8) r.push('.....');
+  GL[ch] = r;
+}
+
+/* =====================================================================
+   KEY DEFINITIONS  (face html, face plain, 2nd html, 2nd plain, alpha, class)
+   ===================================================================== */
+const KEYS = {};
+function K(id, f, fp, s, sp, a, cls){ KEYS[id] = {id, f, fp, s, sp, a, cls}; }
+K('yeq','Y=','Y=','STAT PLOT','STAT PLOT','F1','fn');
+K('window','WINDOW','WINDOW','TBLSET','TBLSET','F2','fn');
+K('zoom','ZOOM','ZOOM','FORMAT','FORMAT','F3','fn');
+K('trace','TRACE','TRACE','CALC','CALC','F4','fn');
+K('graph','GRAPH','GRAPH','TABLE','TABLE','F5','fn');
+K('2nd','2nd','2nd','','','','k2nd');
+K('mode','MODE','MODE','QUIT','QUIT','','dk');
+K('del','DEL','DEL','INS','INS','','dk');
+K('alpha','ALPHA','ALPHA','A-LOCK','A-LOCK','','kalpha');
+K('xt','X,T,\u03B8,n','X,T,\u03B8,n','LINK','LINK','','dk');
+K('stat','STAT','STAT','LIST','LIST','','dk');
+K('math','MATH','MATH','TEST','TEST','A','dk');
+K('apps','APPS','APPS','ANGLE','ANGLE','B','dk');
+K('prgm','PRGM','PRGM','DRAW','DRAW','C','dk');
+K('vars','VARS','VARS','DISTR','DISTR','','dk');
+K('clear','CLEAR','CLEAR','','','','dk');
+K('inv','x<sup>-1</sup>','x\u207B\u00B9','MATRIX','MATRIX','D','dk');
+K('sin','SIN','SIN','sin<sup>-1</sup>','sin\u207B\u00B9','E','dk');
+K('cos','COS','COS','cos<sup>-1</sup>','cos\u207B\u00B9','F','dk');
+K('tan','TAN','TAN','tan<sup>-1</sup>','tan\u207B\u00B9','G','dk');
+K('pow','^','^','\u03C0','\u03C0','H','dk');
+K('sq','x<sup>2</sup>','x\u00B2','\u221A','\u221A','I','dk');
+K('comma',',',',','EE','EE','J','dk');
+K('lp','(','(','{','{','K','dk');
+K('rp',')',')','}','}','L','dk');
+K('div','\u00F7','\u00F7','e','e','M','op');
+K('log','LOG','LOG','10<sup>x</sup>','10\u02E3','N','dk');
+K('7','7','7','u','u','O','num');
+K('8','8','8','v','v','P','num');
+K('9','9','9','w','w','Q','num');
+K('mul','\u00D7','\u00D7','[','[','R','op');
+K('ln','LN','LN','e<sup>x</sup>','e\u02E3','S','dk');
+K('4','4','4','L4','L4','T','num');
+K('5','5','5','L5','L5','U','num');
+K('6','6','6','L6','L6','V','num');
+K('sub','\u2212','\u2212',']',']','W','op');
+K('sto','STO\u25B8','STO\u25B8','RCL','RCL','X','dk');
+K('1','1','1','L1','L1','Y','num');
+K('2','2','2','L2','L2','Z','num');
+K('3','3','3','L3','L3','\u03B8','num');
+K('add','+','+','MEM','MEM','"','op');
+K('on','ON','ON','OFF','OFF','','dk');
+K('0','0','0','CATALOG','CATALOG','SPACE','num');
+K('dot','.','.','i','i',':','num');
+K('neg','(-)','(-)','ANS','ANS','?','num');
+K('enter','ENTER','ENTER','ENTRY','ENTRY','SOLVE','op');
+['up','down','left','right'].forEach(d => K(d, '', {up:'\u25B2',down:'\u25BC',left:'\u25C0',right:'\u25B6'}[d], '', '', '', 'ar'));
+
+const ORDER = ['yeq','window','zoom','trace','graph','2nd','mode','del','alpha','xt','stat',
+  'math','apps','prgm','vars','clear','inv','sin','cos','tan','pow','sq','comma','lp','rp','div',
+  'log','7','8','9','mul','ln','4','5','6','sub','sto','1','2','3','add','on','0','dot','neg','enter'];
+
+const ALPHA_TOK = {};
+'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(c => ALPHA_TOK[c] = c);
+ALPHA_TOK['\u03B8'] = '\u03B8'; ALPHA_TOK['SPACE'] = ' '; ALPHA_TOK[':'] = ':'; ALPHA_TOK['?'] = '?';
+
+/* build the keypad */
+const keysEl = $('keys');
+keysEl.insertAdjacentHTML('beforeend',
+  '<div class="dpad">' +
+  '<button class="ar up" data-key="up" tabindex="-1" aria-label="Up">\u25B2</button>' +
+  '<button class="ar down" data-key="down" tabindex="-1" aria-label="Down">\u25BC</button>' +
+  '<button class="ar left" data-key="left" tabindex="-1" aria-label="Left">\u25C0</button>' +
+  '<button class="ar right" data-key="right" tabindex="-1" aria-label="Right">\u25B6</button>' +
+  '<span class="hub"></span></div>');
+ORDER.forEach(id => {
+  const k = KEYS[id];
+  const title = k.fp + (k.sp ? '  (2nd: ' + k.sp + ')' : '');
+  keysEl.insertAdjacentHTML('beforeend',
+    '<div class="cell"><div class="lbl' + ((k.s.length + k.a.length) >= 9 ? ' tight' : '') + '"><span class="s">' + k.s + '</span><span class="a">' + k.a + '</span></div>' +
+    '<button class="key ' + k.cls + '" data-key="' + id + '" tabindex="-1" title="' + title.replace(/"/g,'&quot;') + '">' + k.f + '</button></div>');
+});
+const keyEls = {};
+keysEl.querySelectorAll('[data-key]').forEach(el => keyEls[el.dataset.key] = el);
+
+/* =====================================================================
+   CALCULATOR STATE
+   ===================================================================== */
+const st = {};
+let contrast = 6;
+function resetState(){
+  Object.assign(st, {
+    on:true, screen:'home', hist:[], entries:[], recall:-1, input:[], cur:0, ins:false,
+    second:false, alpha:false, alock:false, vars:{}, ans:0,
+    sel:[0,0,0,0,0,0,0,0], mrow:0, mcol:[0,0,0,0,0,0,0,0], err:null, errSel:0,
+    blink:true, blinkHold:0
+  });
+}
+resetState();
+
+const MROWS = [
+  [['Normal',0],['Sci',7],['Eng',11]],
+  [['Float',0],['0',6],['1',7],['2',8],['3',9],['4',10],['5',11],['6',12],['7',13],['8',14],['9',15]],
+  [['Radian',0],['Degree',7]],
+  [['Func',0],['Par',5],['Pol',9],['Seq',13]],
+  [['Connected',0],['Dot',10]],
+  [['Sequential',0],['Simul',11]],
+  [['Real',0],['a+bi',5],['re^\u03B8i',10]],
+  [['Full',0],['Horiz',5],['G-T',11]]
+];
+const isDeg = () => st.sel[2] === 1;
+function fmtOpts(){ return { kind: st.sel[0], fix: st.sel[1] === 0 ? null : st.sel[1] - 1 }; }
+
+/* =====================================================================
+   MATH ENGINE
+   ===================================================================== */
+class TIErr extends Error { constructor(code,pos){ super(code); this.code = code; this.pos = pos; } }
+const VAR = /^[A-Z\u03B8]$/;
+const DIGIT = /^[0-9]$/;
+const FUNCS = ['sin(','cos(','tan(','sin\u207B\u00B9(','cos\u207B\u00B9(','tan\u207B\u00B9(','log(','ln(','\u221A(','10^(','e^('];
+const clean = x => (x === 0 || !isFinite(x)) ? x : Number(x.toPrecision(14));
+
+function evaluate(tokensIn, ctx){
+  const tk = [], map = [];
+  tokensIn.forEach((t,i) => { if (t !== ' ') { tk.push(t); map.push(i); } });
+  const fail = (code,p) => { throw new TIErr(code, map.length ? map[Math.max(0, Math.min(p, map.length-1))] : 0); };
+  let body = tk, store = null;
+  const si = tk.indexOf('\u2192');
+  if (si >= 0) {
+    if (si !== tk.length - 2 || !VAR.test(tk[si+1])) fail('SYNTAX', si + 1 >= tk.length ? si : si + 1);
+    store = tk[si+1]; body = tk.slice(0, si);
+  }
+  const n = body.length;
+  if (n === 0) fail('SYNTAX', 0);
+  let i = 0;
+  const D = ctx.deg;
+
+  const ck = (v,p) => {
+    if (Number.isNaN(v)) fail('DOMAIN', p);
+    v = clean(v);
+    if (!isFinite(v) || Math.abs(v) >= 1e100) fail('OVERFLOW', p);
+    if (Math.abs(v) < 1e-99) v = 0;
+    return v;
+  };
+  const startsPrimary = t => t !== undefined && (DIGIT.test(t) || t === '.' || t === '\u1D07' || t === '\u03C0' || t === 'e' ||
+      t === 'Ans' || VAR.test(t) || t === '(' || FUNCS.includes(t));
+
+  function number(){
+    const start = i; let mant = '', dot = false;
+    while (i < n && (DIGIT.test(body[i]) || (body[i] === '.' && !dot))) { if (body[i] === '.') dot = true; mant += body[i]; i++; }
+    if (i < n && body[i] === '.') fail('SYNTAX', i);
+    let exp = null;
+    if (i < n && body[i] === '\u1D07') {
+      i++; let neg = false;
+      if (body[i] === '\u00AF') { neg = true; i++; }
+      let d = ''; while (i < n && DIGIT.test(body[i])) { d += body[i]; i++; }
+      if (d === '') fail('SYNTAX', Math.min(i, n - 1));
+      exp = (neg ? '-' : '') + d;
+      if (mant === '') mant = '1';
+    }
+    if (mant === '' || mant === '.') fail('SYNTAX', start);
+    return Number(mant + (exp !== null ? 'e' + exp : ''));
+  }
+
+  const modDeg = (x,m) => ((x % m) + m) % m;
+  function applyFn(f, x, p){
+    const toRad = a => D ? a * Math.PI / 180 : a;
+    const fromRad = a => D ? a * 180 / Math.PI : a;
+    switch (f) {
+      case 'sin(': {
+        if (D) { const m = modDeg(x,360); if (m===0||m===180) return 0; if (m===90) return 1; if (m===270) return -1; }
+        const r = Math.sin(toRad(x)); return Math.abs(r) < 1e-13 ? 0 : r; }
+      case 'cos(': {
+        if (D) { const m = modDeg(x,360); if (m===90||m===270) return 0; if (m===0) return 1; if (m===180) return -1; }
+        const r = Math.cos(toRad(x)); return Math.abs(r) < 1e-13 ? 0 : r; }
+      case 'tan(': {
+        if (D) { const m = modDeg(x,180); if (m===0) return 0; if (m===90) fail('DOMAIN', p); }
+        else if (Math.abs(Math.cos(x)) < 1e-12) fail('DOMAIN', p);
+        return Math.tan(toRad(x)); }
+      case 'sin\u207B\u00B9(': if (Math.abs(x) > 1) fail('DOMAIN', p); return fromRad(Math.asin(x));
+      case 'cos\u207B\u00B9(': if (Math.abs(x) > 1) fail('DOMAIN', p); return fromRad(Math.acos(x));
+      case 'tan\u207B\u00B9(': return fromRad(Math.atan(x));
+      case 'log(': if (x <= 0) fail('DOMAIN', p); return Math.log10(x);
+      case 'ln(': if (x <= 0) fail('DOMAIN', p); return Math.log(x);
+      case '\u221A(': if (x < 0) fail('NONREAL ANS', p); return Math.sqrt(x);
+      case '10^(': return pw(10, x, p);
+      case 'e^(': return Math.exp(x);
+    }
+    fail('SYNTAX', p);
+  }
+  function pw(a,b,p){
+    if (a === 0 && b === 0) fail('DOMAIN', p);
+    if (a === 0 && b < 0) fail('DIVIDE BY 0', p);
+    if (a < 0 && !Number.isInteger(b)) fail('NONREAL ANS', p);
+    return Math.pow(a,b);
+  }
+
+  function expr(){
+    let v = term();
+    while (i < n && (body[i] === '+' || body[i] === '-')) {
+      const op = body[i], p = i; i++;
+      const r = term();
+      v = ck(op === '+' ? v + r : v - r, p);
+    }
+    return v;
+  }
+  function term(){
+    let v = neg();
+    for (;;) {
+      const t = body[i];
+      if (t === '\u00D7' || t === '\u00F7') {
+        const p = i; i++;
+        const r = neg();
+        if (t === '\u00D7') v = ck(v * r, p);
+        else { if (r === 0) fail('DIVIDE BY 0', p); v = ck(v / r, p); }
+      } else if (startsPrimary(t)) {
+        const p = i; const r = neg(); v = ck(v * r, p);
+      } else break;
+    }
+    return v;
+  }
+  function neg(){ if (body[i] === '\u00AF') { i++; return -neg(); } return power(); }
+  function power(){
+    let v = postfix();
+    while (body[i] === '^') {
+      const p = i; i++;
+      const e = expNeg();
+      v = ck(pw(v, e, p), p);
+    }
+    return v;
+  }
+  function expNeg(){ if (body[i] === '\u00AF') { i++; return -expNeg(); } return postfix(); }
+  function postfix(){
+    let v = primary();
+    for (;;) {
+      const t = body[i];
+      if (t === '\u00B2') { v = ck(v * v, i); i++; }
+      else if (t === '\u207B\u00B9') { if (v === 0) fail('DIVIDE BY 0', i); v = ck(1 / v, i); i++; }
+      else break;
+    }
+    return v;
+  }
+  function primary(){
+    const t = body[i];
+    if (t === undefined) fail('SYNTAX', n);
+    if (DIGIT.test(t) || t === '.' || t === '\u1D07') return number();
+    if (t === '\u03C0') { i++; return Math.PI; }
+    if (t === 'e') { i++; return Math.E; }
+    if (t === 'Ans') { i++; return ctx.ans; }
+    if (VAR.test(t)) { i++; return ctx.vars[t] || 0; }
+    if (t === '(') {
+      i++; const v = expr();
+      if (body[i] === ')') i++; else if (i < n) fail('SYNTAX', i);
+      return v;
+    }
+    if (FUNCS.includes(t)) {
+      const p = i; i++;
+      const a = expr();
+      if (body[i] === ')') i++; else if (i < n) fail('SYNTAX', i);
+      return ck(applyFn(t, a, p), p);
+    }
+    fail('SYNTAX', i);
+  }
+
+  const value = expr();
+  if (i < n) fail('SYNTAX', i);
+  return { value: ck(value, 0), store };
+}
+
+/* ---------- number formatting like the TI display ---------- */
+function fmt(x){
+  if (Object.is(x, -0)) x = 0;
+  if (x === 0) return '0';
+  const m = fmtOpts(), neg = x < 0, ax = Math.abs(x);
+  const sci = eng => {
+    const e = m.fix === null ? ax.toExponential(9) : ax.toExponential(m.fix);
+    const parts = e.split('e'); let mant = parts[0], exp = parseInt(parts[1], 10);
+    if (eng) {
+      const sh = ((exp % 3) + 3) % 3; exp -= sh;
+      const mv = Number(mant) * Math.pow(10, sh);
+      mant = m.fix === null ? String(Number(mv.toPrecision(10))) : mv.toFixed(m.fix);
+    } else if (m.fix === null) mant = String(Number(mant));
+    return mant + '\u1D07' + (exp < 0 ? '\u00AF' : '') + Math.abs(exp);
+  };
+  let s;
+  if (m.kind === 1) s = sci(false);
+  else if (m.kind === 2) s = sci(true);
+  else {
+    const r = Number(ax.toPrecision(10));
+    if (r >= 1e10 || r < 1e-3) s = sci(false);
+    else s = m.fix === null ? String(r) : ax.toFixed(m.fix);
+  }
+  s = s.replace(/^0\./, '.');
+  return (neg ? '\u00AF' : '') + s;
+}
+
+/* =====================================================================
+   SCREEN MODEL  (16 x 8 character grid)
+   ===================================================================== */
+const COLS = 16, ROWS = 8;
+const blankGrid = () => Array.from({length:ROWS}, () => Array.from({length:COLS}, () => ({ch:' ', inv:false, ul:false})));
+function put(g,r,c,ch,inv,ul){
+  if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return;
+  const x = g[r][c]; x.ch = ch; x.inv = !!inv; x.ul = !!ul;
+}
+const putText = (g,r,c,t,inv) => Array.from(t).forEach((ch,i) => put(g,r,c+i,ch,inv));
+function flat(tokens){
+  const chars = [], offs = [];
+  tokens.forEach(t => { offs.push(chars.length); Array.from(t).forEach(c => chars.push(c)); });
+  return {chars, offs};
+}
+
+function computeScreen(){
+  const g = blankGrid();
+  if (!st.on) return g;
+  if (st.screen === 'mode') {
+    MROWS.forEach((row,r) => row.forEach(([t,c],oi) => {
+      const selected = st.sel[r] === oi, isCur = st.mrow === r && st.mcol[r] === oi;
+      Array.from(t).forEach((ch,k) => {
+        let inv = selected;
+        if (isCur && k === 0 && st.blink) inv = !inv;
+        put(g, r, c + k, ch, inv);
+      });
+    }));
+    return g;
+  }
+  if (st.screen === 'error') {
+    putText(g,0,0,'ERR:' + st.err.code);
+    put(g,1,0,'1',st.errSel === 0); putText(g,1,1,':Quit');
+    put(g,2,0,'2',st.errSel === 1); putText(g,2,1,':Goto');
+    return g;
+  }
+  const lines = [];
+  for (const h of st.hist) {
+    const cs = flat(h.expr).chars;
+    const nl = Math.max(1, Math.ceil(cs.length / COLS));
+    for (let i = 0; i < nl; i++) lines.push({t: cs.slice(i*COLS, (i+1)*COLS).join(''), right:false});
+    if (h.res != null) lines.push({t:h.res, right:true});
+  }
+  const fi = flat(st.input), ic = fi.chars, L = ic.length;
+  const curFlat = st.cur < st.input.length ? fi.offs[st.cur] : L;
+  const inLines = Math.floor(L / COLS) + 1, base = lines.length;
+  for (let i = 0; i < inLines; i++) lines.push({t: ic.slice(i*COLS, (i+1)*COLS).join(''), right:false});
+  const top = Math.max(0, lines.length - ROWS);
+  lines.slice(top).forEach((ln,r) => {
+    const len = Array.from(ln.t).length;
+    putText(g, r, ln.right ? COLS - len : 0, ln.t);
+  });
+  const cr = base + Math.floor(curFlat / COLS) - top, cc = curFlat % COLS;
+  const under = ic[curFlat] || ' ';
+  if (st.second) put(g,cr,cc, st.blink ? '\u2191' : under, st.blink);
+  else if (st.alpha || st.alock) put(g,cr,cc, st.blink ? 'A' : under, st.blink);
+  else if (st.ins) put(g,cr,cc, under, false, st.blink);
+  else put(g,cr,cc, under, st.blink);
+  return g;
+}
+
+/* ---------- drawing ---------- */
+const lcd = $('lcd'), lctx = lcd.getContext('2d');
+const PX = 8, W = 96, H = 64;
+function gridToFB(g){
+  const fb = new Uint8Array(W * H);
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const cell = g[r][c], gl = GL[cell.ch] || GL['?'], x0 = c*6, y0 = r*8;
+    if (cell.inv) for (let y = 0; y < 8; y++) for (let x = 0; x < 6; x++) fb[(y0+y)*W + x0 + x] = 1;
+    for (let gy = 0; gy < 8; gy++) for (let gx = 0; gx < 5; gx++)
+      if (gl[gy][gx] === '#') fb[(y0+gy)*W + x0 + gx] = cell.inv ? 0 : 1;
+    if (cell.ul) for (let x = 0; x < 5; x++) fb[(y0+7)*W + x0 + x] = 1;
+  }
+  return fb;
+}
+function paint(fb){
+  const k = contrast / 9;
+  const mix = (a,b) => Math.round(a + (b-a)*k);
+  const bg = st.on ? [mix(188,152), mix(200,166), mix(176,142)] : [190,200,184];
+  lctx.fillStyle = 'rgb(' + bg.join(',') + ')';
+  lctx.fillRect(0,0,lcd.width,lcd.height);
+  if (!st.on) return;
+  lctx.fillStyle = 'rgba(20,32,20,0.045)';
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) lctx.fillRect(x*PX, y*PX, PX-1, PX-1);
+  lctx.fillStyle = 'rgba(16,24,32,' + (0.45 + 0.55*k).toFixed(3) + ')';
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (fb[y*W+x]) lctx.fillRect(x*PX, y*PX, PX-1, PX-1);
+}
+function render(){
+  const g = computeScreen();
+  paint(gridToFB(g));
+  keyEls['2nd'].classList.toggle('armed-s', st.second && st.on);
+  keyEls['alpha'].classList.toggle('armed-a', (st.alpha || st.alock) && st.on);
+  const last = st.hist[st.hist.length-1];
+  $('sr').textContent = !st.on ? 'Calculator off' : st.screen === 'error' ? 'Error ' + st.err.code :
+    (last && last.res != null ? 'Result ' + last.res : '');
+}
+
+/* =====================================================================
+   KEYSTROKE TRAIL + HELPERS
+   ===================================================================== */
+const trail = $('trail');
+function addChip(text, cls){
+  const el = document.createElement('span');
+  el.className = 'chip ' + (cls || '');
+  el.textContent = text;
+  trail.appendChild(el);
+  trimTrail();
+}
+function trimTrail(){
+  if (!trail.clientHeight) return;
+  while (trail.scrollHeight > trail.clientHeight + 1 && trail.children.length > 1) trail.removeChild(trail.firstChild);
+}
+let toastT;
+function note(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 1900);
+}
+let litMs = 430, quiet = false;
+function lit(id){
+  const el = keyEls[id]; if (!el || quiet) return;
+  el.classList.add('lit');
+  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('lit'), litMs);
+}
+function holdBlink(){ st.blink = true; st.blinkHold = Date.now() + 700; }
+setInterval(() => {
+  if (Date.now() < st.blinkHold) return;
+  st.blink = !st.blink; render();
+}, 520);
+
+/* =====================================================================
+   KEY HANDLING
+   ===================================================================== */
+const AUTO_ANS = ['+','-','\u00D7','\u00F7','^','\u00B2','\u207B\u00B9'];
+function insert(tok){
+  if (st.input.length === 0 && AUTO_ANS.includes(tok)) { st.input.push('Ans'); st.cur = 1; }
+  st.recall = -1;
+  if (st.ins) st.input.splice(st.cur, 0, tok);
+  else if (st.cur < st.input.length) st.input[st.cur] = tok;
+  else st.input.push(tok);
+  st.cur++;
+}
+function doEnter(){
+  if (st.input.length === 0) return;
+  const toks = st.input.slice();
+  try {
+    const r = evaluate(toks, {ans: st.ans, vars: st.vars, deg: isDeg()});
+    st.ans = r.value;
+    if (r.store) st.vars[r.store] = r.value;
+    st.hist.push({expr: toks, res: fmt(r.value)});
+    st.entries.push(toks);
+    st.input = []; st.cur = 0; st.ins = false; st.recall = -1;
+  } catch (e) {
+    if (!(e instanceof TIErr)) throw e;
+    st.screen = 'error'; st.err = {code: e.code, pos: e.pos}; st.errSel = 0; st.ins = false;
+  }
+}
+function recallOlder(){
+  if (!st.entries.length) return;
+  const idx = st.recall < 0 ? st.entries.length - 1 : Math.max(0, st.recall - 1);
+  st.recall = idx; st.input = st.entries[idx].slice(); st.cur = st.input.length; st.ins = false;
+}
+function recallNewer(){
+  if (st.recall < 0) return;
+  const idx = st.recall + 1;
+  if (idx >= st.entries.length) { st.recall = -1; st.input = []; st.cur = 0; }
+  else { st.recall = idx; st.input = st.entries[idx].slice(); st.cur = st.input.length; }
+  st.ins = false;
+}
+const N_TOK = {inv:'\u207B\u00B9', sin:'sin(', cos:'cos(', tan:'tan(', pow:'^', sq:'\u00B2', comma:',', lp:'(', rp:')',
+  div:'\u00F7', log:'log(', mul:'\u00D7', ln:'ln(', sub:'-', sto:'\u2192', add:'+', dot:'.', neg:'\u00AF', xt:'X'};
+const S_TOK = {sin:'sin\u207B\u00B9(', cos:'cos\u207B\u00B9(', tan:'tan\u207B\u00B9(', pow:'\u03C0', sq:'\u221A(',
+  comma:'\u1D07', div:'e', log:'10^(', ln:'e^(', neg:'Ans'};
+
+function homeKey(id, mode, k){
+  if (mode === 'a') {
+    const t = ALPHA_TOK[k.a];
+    if (t === undefined) return note(k.fp + ' has no letter on this calculator');
+    return insert(t);
+  }
+  if (mode === 's') {
+    if (S_TOK[id]) return insert(S_TOK[id]);
+    switch (id) {
+      case 'enter': return recallOlder();
+      case 'del': st.ins = true; return;
+      case 'on': st.on = false; return;
+      case 'left': st.cur = 0; return;
+      case 'right': st.cur = st.input.length; return;
+      case 'up': contrast = Math.min(9, contrast + 1); return;
+      case 'down': contrast = Math.max(0, contrast - 1); return;
+      case 'mode': case 'clear': return;
+    }
+    return note('2nd ' + k.sp + ' is not active in this simulator');
+  }
+  if (N_TOK[id]) return insert(N_TOK[id]);
+  if (DIGIT.test(id)) return insert(id);
+  switch (id) {
+    case 'enter': return doEnter();
+    case 'del': if (st.cur < st.input.length) { st.input.splice(st.cur, 1); st.recall = -1; } return;
+    case 'clear':
+      st.ins = false; st.recall = -1;
+      if (st.input.length) { st.input = []; st.cur = 0; } else { st.hist = []; }
+      return;
+    case 'mode': st.screen = 'mode'; st.mrow = 0; st.mcol = st.sel.slice(); return;
+    case 'left': st.cur = Math.max(0, st.cur - 1); st.ins = false; return;
+    case 'right': st.cur = Math.min(st.input.length, st.cur + 1); st.ins = false; return;
+    case 'up': return recallOlder();
+    case 'down': return recallNewer();
+    case 'on': return;
+  }
+  note(k.fp + ' is not active in this simulator');
+}
+function modeKey(id, mode){
+  if (mode === 's' && id === 'mode') { st.screen = 'home'; return; }
+  if (mode !== 'n') return;
+  switch (id) {
+    case 'up': st.mrow = Math.max(0, st.mrow - 1); break;
+    case 'down': st.mrow = Math.min(ROWS - 1, st.mrow + 1); break;
+    case 'left': st.mcol[st.mrow] = Math.max(0, st.mcol[st.mrow] - 1); break;
+    case 'right': st.mcol[st.mrow] = Math.min(MROWS[st.mrow].length - 1, st.mcol[st.mrow] + 1); break;
+    case 'enter': st.sel[st.mrow] = st.mcol[st.mrow]; break;
+    case 'clear': st.screen = 'home'; break;
+  }
+}
+function errQuit(){
+  st.hist.push({expr: st.input.slice(), res: null});
+  st.entries.push(st.input.slice());
+  st.input = []; st.cur = 0; st.screen = 'home'; st.recall = -1;
+}
+function errGoto(){
+  st.screen = 'home';
+  st.cur = Math.max(0, Math.min(st.err.pos, st.input.length));
+}
+function errKey(id, mode){
+  if (mode !== 'n') return;
+  if (id === '1') return errQuit();
+  if (id === '2') return errGoto();
+  if (id === 'enter') return st.errSel === 0 ? errQuit() : errGoto();
+  if (id === 'up' || id === 'down') { st.errSel = 1 - st.errSel; return; }
+  if (id === 'clear') return errQuit();
+}
+
+function press(id){
+  const k = KEYS[id]; if (!k) return;
+  lit(id); holdBlink();
+  if (!st.on) {
+    if (id === 'on') { st.on = true; addChip('ON', ''); }
+    render(); return;
+  }
+  if (id === '2nd') {
+    addChip('2nd', 'm2'); st.second = !st.second; st.alpha = false; render(); return;
+  }
+  if (id === 'alpha') {
+    if (st.second) { st.second = false; st.alock = true; addChip('A-LOCK', 'ma'); }
+    else if (st.alock) { st.alock = false; addChip('ALPHA', 'ma'); }
+    else { st.alpha = !st.alpha; addChip('ALPHA', 'ma'); }
+    render(); return;
+  }
+  let mode = 'n';
+  if (st.second) { mode = 's'; st.second = false; }
+  else if ((st.alpha || st.alock) && k.a && st.screen === 'home') { mode = 'a'; }
+  if (st.alpha) st.alpha = false;
+
+  if (mode === 's') addChip(k.sp || k.fp, 's');
+  else if (mode === 'a') addChip(k.a === 'SPACE' ? '\u2423' : k.a, 'a');
+  else addChip(k.fp, id === 'enter' ? 'e' : '');
+  if (id === 'enter' && mode === 'n') addChip('', 'sep');
+
+  if (st.screen === 'home') homeKey(id, mode, k);
+  else if (st.screen === 'mode') modeKey(id, mode);
+  else errKey(id, mode);
+  render();
+}
+
+/* =====================================================================
+   INPUT: mouse / touch / keyboard
+   ===================================================================== */
+const calc = $('calc');
+calc.addEventListener('mousedown', e => e.preventDefault());
+calc.addEventListener('click', e => {
+  if (demo.busy) return;
+  const b = e.target.closest('[data-key]');
+  if (b) press(b.dataset.key);
+});
+const KB = {'.':'dot','+':'add','-':'sub','*':'mul','x':'mul','/':'div','(':'lp',')':'rp','^':'pow',',':'comma',
+  '_':'neg','Enter':'enter','=':'enter','Delete':'del','Escape':'clear','ArrowLeft':'left','ArrowRight':'right',
+  'ArrowUp':'up','ArrowDown':'down','s':'sin','c':'cos','t':'tan','l':'log','n':'ln','k':'sto','m':'mode','q':'2nd'};
+const KB_SEQ = {'p':['2nd','pow'],'r':['2nd','sq'],'e':['2nd','comma'],'a':['2nd','neg']};
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const key = e.key;
+  if (key === ' ' && demo.cur >= 0 && !demoEl.hidden) { e.preventDefault(); demoNext(); return; }
+  if (demo.busy) return;
+  let seq = null;
+  if (DIGIT.test(key)) seq = [key];
+  else if (key === 'Backspace') {
+    if (st.on && st.screen === 'home' && st.input.length && st.cur === st.input.length) st.cur--;
+    seq = ['del'];
+  }
+  else if (KB[key]) seq = [KB[key]];
+  else if (KB_SEQ[key]) seq = KB_SEQ[key];
+  if (!seq) return;
+  e.preventDefault();
+  seq.forEach(press);
+});
+
+/* =====================================================================
+   TOOLBAR, SCALING, URL OPTIONS
+   ===================================================================== */
+
+/* =====================================================================
+   DEMOS  (step by step; the calculator types the keys for the class)
+   ===================================================================== */
+const DEMOS = [
+ {id:'ee', title:'Type 6.67E-11', sub:'Scientific notation with the EE key', steps:[
+  {keys:'', say:'We want to enter <b>G = 6.67 &times; 10<sup>-11</sup></b>. Do <b>not</b> type &times; or 10 or ^. The <b>EE</b> key does all of that for you.'},
+  {keys:'6 dot 6 7', say:'Type the first part, <b>6.67</b>, the normal way.'},
+  {keys:'2nd:comma', say:'Press <b>2nd</b>, then the <b>,</b> key. The blue <b>EE</b> above that key means &ldquo;times 10 to the power.&rdquo; An <b>E</b> shows up on the screen.'},
+  {keys:'neg', say:'The exponent is negative, so press the <b>(-)</b> key next. <b>Not</b> the minus key!'},
+  {keys:'1 1', say:'Type the exponent: <b>11</b>.'},
+  {keys:'enter', say:'Press <b>ENTER</b>. The calculator shows <b>6.67E-11</b>, which means 6.67 &times; 10<sup>-11</sup>.'}
+ ]},
+ {id:'square', title:'Square it', sub:'Use x\u00B2 on a number in EE form', steps:[
+  {keys:'', say:'Now let&rsquo;s square it: <b>(6.67 &times; 10<sup>-11</sup>)&sup2;</b>.'},
+  {keys:'6 dot 6 7 2nd:comma neg 1 1', say:'Type <b>6.67E-11</b> again: 6.67, then <b>2nd</b> <b>EE</b>, then <b>(-)</b>, then 11.'},
+  {keys:'sq', say:'Press the <b>x&sup2;</b> key. A small &sup2; shows up on the screen.'},
+  {keys:'enter', say:'Press <b>ENTER</b>. The answer is <b>4.44889E-21</b>. The whole number got squared, including the 10<sup>-11</sup> part.'}
+ ]},
+ {id:'parens', title:'Parentheses', sub:'a = (v\u2082 \u2212 v\u2081) \u00F7 t, wrong way and right way', steps:[
+  {keys:'', say:'A car slows from 24 m/s to 15 m/s in 12 s. <b>a = (15 &minus; 24) &divide; 12</b>. First, let&rsquo;s see what happens if we leave out the parentheses.'},
+  {keys:'1 5 sub 2 4 div 1 2', say:'Type it with no parentheses: <b>15 &minus; 24 &divide; 12</b>.'},
+  {keys:'enter', say:'We got <b>13</b>. That&rsquo;s wrong! The calculator divides first (24 &divide; 12 = 2), then does 15 &minus; 2.'},
+  {keys:'clear', say:'Press <b>CLEAR</b> on an empty line to wipe the screen.'},
+  {keys:'lp 1 5 sub 2 4 rp', say:'Put the top of the fraction in parentheses: <b>( 15 &minus; 24 )</b>.'},
+  {keys:'div 1 2', say:'Then press <b>&divide;</b> and type <b>12</b>.'},
+  {keys:'enter', say:'<b>&minus;0.75</b> m/s&sup2;. The negative sign means the car is slowing down. <b>Rule:</b> if the top of a fraction has a + or &minus;, put it in parentheses.'}
+ ]},
+ {id:'gravity', title:'Gravity: g = GM \u00F7 r\u00B2', sub:'EE, parentheses, and x\u00B2 together', steps:[
+  {keys:'', say:'Find gravity at Earth&rsquo;s surface: <b>g = G &times; M &divide; r&sup2;</b><br>G = 6.67E-11, M = 5.98E24, r = 6.38E6'},
+  {keys:'6 dot 6 7 2nd:comma neg 1 1', say:'Type <b>G</b>: 6.67, <b>2nd EE</b>, <b>(-)</b>, 11.'},
+  {keys:'mul', say:'Press <b>&times;</b>.'},
+  {keys:'5 dot 9 8 2nd:comma 2 4', say:'Type <b>M</b>: 5.98, <b>2nd EE</b>, 24. No (-) this time, because the exponent is positive.'},
+  {keys:'div lp', say:'Press <b>&divide;</b>, then <b>(</b>. We are dividing by r&sup2;, so r goes inside parentheses.'},
+  {keys:'6 dot 3 8 2nd:comma 6', say:'Type <b>r</b>: 6.38, <b>2nd EE</b>, 6.'},
+  {keys:'rp sq', say:'Close with <b>)</b>, then press <b>x&sup2;</b> to square everything inside.'},
+  {keys:'enter', say:'Press <b>ENTER</b>: g &asymp; <b>9.8 m/s&sup2;</b>. That is the gravity you feel every day!'}
+ ]},
+ {id:'ans', title:'Use Ans and square it', sub:'Same problem, split into two pieces', steps:[
+  {keys:'', say:'Same problem, a different way: break it into two smaller pieces and use the <b>ANS</b> key to carry the answer along.'},
+  {keys:'6 dot 3 8 2nd:comma 6 enter', say:'Type <b>r = 6.38E6</b> and press <b>ENTER</b>. It shows 6380000.'},
+  {keys:'sq', say:'On the blank line, press <b>x&sup2;</b>. The calculator starts the line with <b>Ans</b> for you, so you get <b>Ans&sup2;</b>.'},
+  {keys:'enter', say:'Press <b>ENTER</b>: r&sup2; = <b>4.07044E13</b>. This is now the new <b>Ans</b>.'},
+  {keys:'6 dot 6 7 2nd:comma neg 1 1 mul 5 dot 9 8 2nd:comma 2 4', say:'Now type <b>G &times; M</b>: 6.67E-11 &times; 5.98E24.'},
+  {keys:'div 2nd:neg', say:'Press <b>&divide;</b>, then <b>2nd</b> and <b>(-)</b>. The blue <b>ANS</b> above (-) pastes in the last answer, which is r&sup2;.'},
+  {keys:'enter', say:'Press <b>ENTER</b>: g &asymp; <b>9.8 m/s&sup2;</b>. Same answer, and no big parentheses.'}
+ ]},
+ {id:'fix', title:'Oops: minus vs (-)', sub:'Fix a mistake with 2:Goto', steps:[
+  {keys:'', say:'A very common mistake: using the <b>minus</b> key instead of <b>(-)</b> for a negative exponent.'},
+  {keys:'6 dot 6 7 2nd:comma sub 1 1', say:'Type 6.67, <b>2nd EE</b>, but this time press the <b>&minus;</b> key (wrong!), then 11.'},
+  {keys:'enter', say:'Press <b>ENTER</b>. <b>ERR:SYNTAX</b>. The calculator cannot read it.'},
+  {keys:'2', say:'Press <b>2</b> for <b>2:Goto</b>. The cursor jumps to the spot with the problem: the minus sign.'},
+  {keys:'neg', say:'Press <b>(-)</b>. It <b>replaces</b> the minus sign, because typing on top of a character replaces it.'},
+  {keys:'enter', say:'Press <b>ENTER</b>. Now it works: <b>6.67E-11</b>.'}
+ ]}
+];
+
+const demo = {cur:-1, step:-1, busy:false, auto:false, token:0};
+const demoEl = $('demo');
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const parseKeys = str => { const out = []; str.split(/\s+/).filter(Boolean).forEach(t => t.split(':').forEach(k => out.push(k))); return out; };
+
+function demoReset(){
+  const sel = st.sel.slice();
+  resetState(); st.sel = sel;
+  trail.textContent = '';
+  render();
+}
+function syncDemoUI(){
+  const d = DEMOS[demo.cur], active = demo.cur >= 0;
+  $('dcard').hidden = !active; $('dhint').hidden = active;
+  document.querySelectorAll('.dbtn').forEach((b,i) => b.classList.toggle('on', i === demo.cur));
+  if (!active) return;
+  const last = demo.step >= d.steps.length - 1;
+  $('dstep').textContent = d.title + '  |  Step ' + (demo.step + 1) + ' of ' + d.steps.length;
+  $('dsay').innerHTML = d.steps[demo.step].say;
+  $('dBack').disabled = demo.busy || demo.step <= 0;
+  $('dNext').disabled = demo.busy || last;
+  $('dNext').innerHTML = last ? 'Finished' : 'Next &#9654;';
+  $('dAuto').setAttribute('aria-pressed', demo.auto ? 'true' : 'false');
+  $('dAuto').textContent = demo.auto ? 'Pause' : 'Auto-play';
+}
+function demoStart(i){
+  demo.token++; demo.busy = false; demo.auto = false; demo.cur = i; demo.step = 0;
+  demoReset(); syncDemoUI(); fit();
+}
+async function demoNext(){
+  if (demo.busy || demo.cur < 0) return;
+  const d = DEMOS[demo.cur];
+  if (demo.step >= d.steps.length - 1) return;
+  const tok = ++demo.token;
+  demo.busy = true; demo.step++; syncDemoUI(); litMs = 750;
+  for (const k of parseKeys(d.steps[demo.step].keys)) {
+    if (tok !== demo.token) return;
+    press(k);
+    await sleep(520);
+  }
+  litMs = 430;
+  if (tok !== demo.token) return;
+  demo.busy = false; syncDemoUI();
+  if (demo.auto) {
+    await sleep(1800);
+    if (demo.auto && tok === demo.token) demoNext();
+  }
+}
+function demoBack(){
+  if (demo.busy || demo.step <= 0) return;
+  demo.auto = false; demo.token++;
+  const target = demo.step - 1, d = DEMOS[demo.cur];
+  demoReset(); quiet = true;
+  for (let s = 0; s <= target; s++) parseKeys(d.steps[s].keys).forEach(k => press(k));
+  quiet = false; demo.step = target; syncDemoUI();
+}
+function demoDone(){ demo.token++; demo.busy = false; demo.auto = false; demo.cur = -1; litMs = 430; syncDemoUI(); fit(); }
+
+DEMOS.forEach((d,i) => {
+  const b = document.createElement('button');
+  b.className = 'dbtn'; b.innerHTML = d.title + '<small>' + d.sub + '</small>';
+  b.addEventListener('click', () => demoStart(i));
+  $('dlist').appendChild(b);
+});
+$('dNext').addEventListener('click', demoNext);
+$('dBack').addEventListener('click', demoBack);
+$('dRestart').addEventListener('click', () => demoStart(demo.cur));
+$('dDone').addEventListener('click', demoDone);
+$('dAuto').addEventListener('click', () => { demo.auto = !demo.auto; syncDemoUI(); if (demo.auto && !demo.busy) demoNext(); });
+demoEl.addEventListener('mousedown', e => e.preventDefault());
+$('bDemo').addEventListener('click', e => {
+  demoEl.hidden = !demoEl.hidden;
+  $('bDemo').setAttribute('aria-pressed', demoEl.hidden ? 'false' : 'true');
+  fit(); e.target.blur();
+});
+
+const holder = $('holder'), bar = $('bar');
+function fit(){
+  const docked = window.innerWidth >= 860;
+  demoEl.classList.toggle('float', !docked);
+  const panelW = (!demoEl.hidden && docked) ? demoEl.offsetWidth + 28 : 0;
+  const availW = window.innerWidth - 16 - panelW;
+  const availH = window.innerHeight - (bar.hidden ? 0 : bar.offsetHeight) - 16;
+  const w = 360, h = calc.offsetHeight;
+  const s = Math.max(0.3, Math.min(availW / w, availH / h, 2.6));
+  calc.style.transform = 'scale(' + s + ')';
+  holder.style.width = (w * s) + 'px';
+  holder.style.height = (h * s) + 'px';
+}
+window.addEventListener('resize', fit);
+
+function setTrail(on){
+  calc.classList.toggle('notrail', !on);
+  $('bTrail').setAttribute('aria-pressed', on ? 'true' : 'false');
+  fit();
+}
+$('bTrail').addEventListener('click', e => { setTrail($('bTrail').getAttribute('aria-pressed') !== 'true'); e.target.blur(); });
+$('bClearTrail').addEventListener('click', e => { trail.textContent = ''; e.target.blur(); });
+$('bReset').addEventListener('click', e => { resetState(); trail.textContent = ''; render(); e.target.blur(); });
+$('bHelp').addEventListener('click', e => { const h = $('help'); h.hidden = !h.hidden; e.target.blur(); });
+document.addEventListener('click', e => {
+  const h = $('help');
+  if (!h.hidden && !h.contains(e.target) && e.target.id !== 'bHelp') h.hidden = true;
+});
+
+const qs = new URLSearchParams(location.search);
+if (qs.has('clean')) bar.hidden = true;
+const wantDemo = DEMOS.findIndex(d => d.id === qs.get('demo'));
+demoEl.hidden = (qs.has('clean') && wantDemo < 0) || window.innerWidth < 860 && wantDemo < 0;
+$('bDemo').setAttribute('aria-pressed', demoEl.hidden ? 'false' : 'true');
+if (wantDemo >= 0) demoStart(wantDemo);
+if (qs.get('trail') === '0') setTrail(false);
+if (qs.get('mode') === 'degree') st.sel[2] = 1;
+
+render(); fit();
+window.addEventListener('load', fit);
+
+/* test hooks */
+window.__ti = { st, press, demo, DEMOS, demoStart, demoNext, demoBack, evaluate, fmt, KEYS, render,
+  screenText: () => computeScreen().map(r => r.map(c => c.ch).join('')),
+  setBlink: v => { st.blink = v; st.blinkHold = Date.now() + 1e9; } };
+})();
+</script>
+</body>
+</html>
