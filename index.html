@@ -873,6 +873,16 @@ const DEMOS = [
   {keys:'div 2nd:neg', say:'Press <b>&divide;</b>, then <b>2nd</b> and <b>(-)</b>. The blue <b>ANS</b> above (-) pastes in the last answer, which is r&sup2;.'},
   {keys:'enter', say:'Press <b>ENTER</b>: g &asymp; <b>9.8 m/s&sup2;</b>. Same answer, and no big parentheses.'}
  ]},
+ {id:'store', title:'Store a number', sub:'Save a value under a letter with STO\u25B8', steps:[
+  {keys:'', say:'Typing <b>6.67E-11</b> over and over is a pain. You can <b>store</b> it under a letter, then use the letter any time you need it.'},
+  {keys:'6 dot 6 7 2nd:comma neg 1 1', say:'First, type the number you want to save: <b>6.67E-11</b>.'},
+  {keys:'sto', say:'Press <b>STO&#9656;</b>. An arrow <b>&rarr;</b> shows up on the screen. It means &ldquo;store into.&rdquo;'},
+  {keys:'alpha tan', say:'Press <b>ALPHA</b>, then the <b>TAN</b> key. The green <b>G</b> above TAN is the letter we want, so a <b>G</b> appears. (ALPHA means &ldquo;use the green letter.&rdquo;)'},
+  {keys:'enter', say:'Press <b>ENTER</b>. The calculator shows <b>6.67E-11</b>, and now <b>G</b> holds that number.'},
+  {keys:'5 dot 9 8 2nd:comma 2 4 sto alpha:div enter', say:'Do the same for Earth&rsquo;s mass: <b>5.98E24</b> <b>STO&#9656;</b> <b>ALPHA</b> <b>&divide;</b> (green <b>M</b>) <b>ENTER</b>. Now <b>M</b> holds it.'},
+  {keys:'alpha:tan mul alpha:div', say:'Use them! Press <b>ALPHA</b> <b>TAN</b> for G, then <b>&times;</b>, then <b>ALPHA</b> <b>&divide;</b> for M. No retyping.'},
+  {keys:'enter', say:'Press <b>ENTER</b>: G &times; M = <b>3.98866E14</b>. G and M stay stored until you store something new in them.'}
+ ]},
  {id:'fix', title:'Oops: minus vs (-)', sub:'Fix a mistake with 2:Goto', steps:[
   {keys:'', say:'A very common mistake: using the <b>minus</b> key instead of <b>(-)</b> for a negative exponent.'},
   {keys:'6 dot 6 7 2nd:comma sub 1 1', say:'Type 6.67, <b>2nd EE</b>, but this time press the <b>&minus;</b> key (wrong!), then 11.'},
